@@ -1,0 +1,70 @@
+local Players = game:GetService("Players")
+local ws = game:GetService("Workspace")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = char:WaitForChild("HumanoidRootPart")
+local camera = ws.CurrentCamera
+
+local function setVisibility(state)
+    for _, obj in pairs(char:GetDescendants()) do
+        if obj:IsA("BasePart") or obj:IsA("Decal") or obj:IsA("Clothing") then
+            obj.Transparency = state and 1 or 0
+        end
+    end
+end
+
+local function deleteNPCs()
+    local npcsFolder = ws:FindFirstChild("NPCs")
+    if npcsFolder then
+        npcsFolder:Destroy()
+        print("Папка NPCs удалена!")
+    else
+        print("Папка NPCs не найдена!")
+    end
+end
+
+local function teleportToGenerators()
+    local generatorsFolder = ws:FindFirstChild("GameTriggers")
+
+    if generatorsFolder then
+        local generators = generatorsFolder:FindFirstChild("Generators")
+
+        if generators then
+            for _, generator in pairs(generators:GetChildren()) do
+                if generator:IsA("Model") and generator.PrimaryPart then
+                    local genPos = generator.PrimaryPart.Position
+                    local genLookVector = generator.PrimaryPart.CFrame.LookVector  -- Направление генератора
+
+                    -- Делаем невидимым перед телепортом
+                    setVisibility(true)
+
+                    -- Телепортируемся перед генератором (на 3 юнита впереди)
+                    local targetPosition = genPos - genLookVector * 3 + Vector3.new(0, 2, 0)
+                    humanoidRootPart.CFrame = CFrame.new(targetPosition, genPos)
+
+                    -- Поворачиваем камеру на генератор
+                    camera.CFrame = CFrame.new(humanoidRootPart.Position, genPos)
+
+                    print("Телепортирован перед генератором:", generator.Name)
+
+                    -- Ждем 15 секунд
+                    task.wait(15)
+                end
+            end
+        else
+            print("Папка Generators не найдена в GameTriggers!")
+        end
+    else
+        print("Папка GameTriggers не найдена!")
+    end
+
+    -- Делаем снова видимым после всех телепортов
+    setVisibility(false)
+end
+
+-- Удаляем папку NPCs
+deleteNPCs()
+
+-- Запуск функции
+teleportToGenerators()
